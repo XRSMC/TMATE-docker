@@ -1,25 +1,21 @@
 FROM ubuntu:22.04
 
-# Install tmate and dependencies
+# Install ttyd and dependencies
 RUN apt-get update && \
-    DEBIAN_FRONTEND=noninteractive apt-get install -y \
-    tmate openssh-client curl ca-certificates && \
+    apt-get install -y wget curl build-essential cmake git libjson-c-dev libwebsockets-dev libssl-dev zlib1g-dev && \
+    git clone https://github.com/tsl0922/ttyd.git && \
+    cd ttyd && mkdir build && cd build && \
+    cmake .. && make && make install && \
+    apt-get remove -y build-essential cmake git && apt-get autoremove -y && \
     apt-get clean && rm -rf /var/lib/apt/lists/*
 
-# Create non-root user
+# Create user
 RUN useradd -ms /bin/bash dockeruser
 USER dockeruser
 WORKDIR /home/dockeruser
 
-# Enable typing in the browser (remote control)
-RUN echo "set -g tmate-allow-remote-control on" > /home/dockeruser/.tmate.conf
+# Expose port 6080 for Railway
+EXPOSE 6080
 
-# Start tmate session, print web + SSH links
-CMD ["/bin/bash", "-c", "\
-tmate -S /tmp/tmate.sock new-session -d && \
-tmate -S /tmp/tmate.sock wait tmate-ready && \
-echo '[+] Web (browser) access:' && \
-tmate -S /tmp/tmate.sock display -p '#{tmate_web}' && \
-echo '[+] SSH access (optional):' && \
-tmate -S /tmp/tmate.sock display -p '#{tmate_ssh}' && \
-tail -f /dev/null"]
+# Start ttyd on port 6080 with bash shell
+CMD ["ttyd", "-p", "6080", "bash"]
