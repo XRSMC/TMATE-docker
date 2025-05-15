@@ -6,10 +6,13 @@ RUN apt-get update && \
     tmate openssh-client curl ca-certificates && \
     apt-get clean
 
-# Create a non-root user (optional)
+# Create non-root user
 RUN useradd -ms /bin/bash dockeruser
 USER dockeruser
 WORKDIR /home/dockeruser
+
+# Add tmate config to allow remote control
+RUN echo "set -g tmate-allow-remote-control on" > /home/dockeruser/.tmate.conf
 
 # Write the start script
 RUN echo '#!/bin/bash\n\
@@ -21,7 +24,7 @@ echo "[+] tmate session is ready:"\n\
 echo "Web: $(tmate -S /tmp/tmate.sock display -p \"#{tmate_web}\")"\n\
 echo "SSH: $(tmate -S /tmp/tmate.sock display -p \"#{tmate_ssh}\")"\n\
 echo ""\n\
-echo "[*] Container will stay alive. Use the SSH or web session to connect."\n\
+echo "[*] You can now connect and type via web or SSH."\n\
 tail -f /dev/null' > start.sh && chmod +x start.sh
 
 CMD ["bash", "start.sh"]
