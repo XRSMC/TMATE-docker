@@ -11,20 +11,15 @@ RUN useradd -ms /bin/bash dockeruser
 USER dockeruser
 WORKDIR /home/dockeruser
 
-# Add tmate config to allow remote control
+# Enable typing via web terminal
 RUN echo "set -g tmate-allow-remote-control on" > /home/dockeruser/.tmate.conf
 
-# Write the start script
-RUN echo '#!/bin/bash\n\
-echo "[+] Starting tmate session..."\n\
-tmate -S /tmp/tmate.sock new-session -d\n\
-tmate -S /tmp/tmate.sock wait tmate-ready\n\
-echo ""\n\
-echo "[+] tmate session is ready:"\n\
-echo "Web: $(tmate -S /tmp/tmate.sock display -p \"#{tmate_web}\")"\n\
-echo "SSH: $(tmate -S /tmp/tmate.sock display -p \"#{tmate_ssh}\")"\n\
-echo ""\n\
-echo "[*] You can now connect and type via web or SSH."\n\
-tail -f /dev/null' > start.sh && chmod +x start.sh
-
-CMD ["bash", "start.sh"]
+# Launch tmate and print web + ssh links
+CMD ["/bin/bash", "-c", "\
+tmate -S /tmp/tmate.sock new-session -d && \
+tmate -S /tmp/tmate.sock wait tmate-ready && \
+echo '[+] tmate web (browser) access:' && \
+tmate -S /tmp/tmate.sock display -p '#{tmate_web}' && \
+echo '[+] tmate ssh access (optional):' && \
+tmate -S /tmp/tmate.sock display -p '#{tmate_ssh}' && \
+tail -f /dev/null"]
